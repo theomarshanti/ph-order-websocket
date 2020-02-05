@@ -1,28 +1,28 @@
 // tslint:disable:no-console
 import {PubSub, Subscription} from '@google-cloud/pubsub';
 import {subscriptionName} from './constants';
+import { sendMessage } from './websocket';
+import { WebSocketContainer } from './model';
 
 const pubSubClient = new PubSub();
 
 export async function listenForMessages() {
-    console.log('listenForMessages');
     const subscription = pubSubClient.subscription(subscriptionName);
-    subscription.on('message', messageHandler);
     return subscription;
 }
 
 export function terminateMessageListener(subscription:Subscription) {
-    console.log('terminateMessageListener');
     subscription.removeListener('message', messageHandler)
     return;
 }
 
-const messageHandler = (message: any) => {
-    console.log(`Received message ${message.id}:`);
-    console.log(`\tData: ${message.data}`);
-    console.log(`\tAttributes: ${message.attributes}`);
+export const messageHandler = (message: any, wsClients: WebSocketContainer[]) => {
+    console.log(`messageHandler - Received message ${message.id}:`);
+    console.log(`messageHandler - Data: ${message.data}`);
+    console.log(`messageHandler - Sending to ${wsClients.length} subscribers`)
+    for(const wsClient of wsClients) {
+        sendMessage(wsClient.wsClient, message.data.toString());
+    }
 
-    // "Ack" (acknowledge receipt of) the message
     message.ack();
 };
-

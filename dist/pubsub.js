@@ -12,27 +12,27 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // tslint:disable:no-console
 const pubsub_1 = require("@google-cloud/pubsub");
 const constants_1 = require("./constants");
+const websocket_1 = require("./websocket");
 const pubSubClient = new pubsub_1.PubSub();
 function listenForMessages() {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('listenForMessages');
         const subscription = pubSubClient.subscription(constants_1.subscriptionName);
-        subscription.on('message', messageHandler);
         return subscription;
     });
 }
 exports.listenForMessages = listenForMessages;
 function terminateMessageListener(subscription) {
-    console.log('terminateMessageListener');
-    subscription.removeListener('message', messageHandler);
+    subscription.removeListener('message', exports.messageHandler);
     return;
 }
 exports.terminateMessageListener = terminateMessageListener;
-const messageHandler = (message) => {
-    console.log(`Received message ${message.id}:`);
-    console.log(`\tData: ${message.data}`);
-    console.log(`\tAttributes: ${message.attributes}`);
-    // "Ack" (acknowledge receipt of) the message
+exports.messageHandler = (message, wsClients) => {
+    console.log(`messageHandler - Received message ${message.id}:`);
+    console.log(`messageHandler - Data: ${message.data}`);
+    console.log(`messageHandler - Sending to ${wsClients.length} subscribers`);
+    for (const wsClient of wsClients) {
+        websocket_1.sendMessage(wsClient.wsClient, message.data.toString());
+    }
     message.ack();
 };
 //# sourceMappingURL=pubsub.js.map
